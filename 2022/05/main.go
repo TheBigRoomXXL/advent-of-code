@@ -6,12 +6,35 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 )
 
 func main() {
+	stacks, instructions := parseInput()
+	part := flag.Int("part", 0, "part number (1 or 2)")
+	flag.Parse()
+	switch *part {
+	case 1:
+		apply_9000(stacks, instructions)
+	case 2:
+		apply_9001(stacks, instructions)
+	default:
+		panic("invalid part")
+	}
 
+	//Get the front of each stack
+	for _, stack := range stacks {
+		fmt.Printf("%c", stack.Front().Value)
+	}
+	fmt.Println()
+}
+
+type Instruction struct {
+	quantity int
+	from     int
+	to       int
+}
+
+func parseInput() ([9]*list.List, []Instruction) {
 	scanner := bufio.NewScanner(os.Stdin)
 	stackDiagram := []string{}
 
@@ -43,71 +66,39 @@ func main() {
 		instructions = append(instructions, parseInstruction(scanner.Text()))
 	}
 
-	// Apply the list of instruction on the stack (the apply mecanism change if it's part 1 or 2)
-	part := flag.Int("part", 0, "part number (1 or 2)")
-	flag.Parse()
-	switch *part {
-	case 1:
-		for _, instruct := range instructions {
-			apply_9000(instruct, stacks)
-		}
-	case 2:
-		for _, instruct := range instructions {
-			apply_9001(instruct, stacks)
-		}
-	default:
-		panic("invalid part")
-	}
-
-	//Get the front if each stack
-	for _, stack := range stacks {
-		fmt.Printf("%c", stack.Front().Value)
-	}
-	fmt.Println()
-}
-
-type Instruction struct {
-	quantity int
-	from     int
-	to       int
+	return stacks, instructions
 }
 
 func parseInstruction(line string) Instruction {
-	cleanup := strings.ReplaceAll(
-		strings.ReplaceAll(
-			strings.ReplaceAll(line, "move ", ""),
-			"from ", ""),
-		"to ", "")
-	data := strings.Split(cleanup, " ")
-	quantity, err := strconv.Atoi(data[0])
+	instru := Instruction{}
+	_, err := fmt.Sscanf(line, "move %d from %d to %d", &instru.quantity, &instru.from, &instru.to)
 	if err != nil {
 		panic(err)
 	}
-	from, err := strconv.Atoi(data[1])
-	if err != nil {
-		panic(err)
-	}
-	to, err := strconv.Atoi(data[2])
-	if err != nil {
-		panic(err)
-	}
-	return Instruction{quantity: quantity, from: from - 1, to: to - 1}
+	// subtract one so they're zero indexed...
+	instru.from--
+	instru.to--
+	return instru
 }
 
-func apply_9000(instruct Instruction, stacks [9]*list.List) {
-	for i := 0; i < instruct.quantity; i++ {
-		crate := stacks[instruct.from].Remove(stacks[instruct.from].Front())
-		stacks[instruct.to].PushFront(crate)
+func apply_9000(stacks [9]*list.List, instructions []Instruction) {
+	for _, instru := range instructions {
+		for i := 0; i < instru.quantity; i++ {
+			crate := stacks[instru.from].Remove(stacks[instru.from].Front())
+			stacks[instru.to].PushFront(crate)
+		}
 	}
 }
 
-func apply_9001(instruct Instruction, stacks [9]*list.List) {
-	crates := []any{}
-	for i := 0; i < instruct.quantity; i++ {
-		crate := stacks[instruct.from].Remove(stacks[instruct.from].Front())
-		crates = append([]any{crate}, crates...) //prepend
-	}
-	for _, crate := range crates {
-		stacks[instruct.to].PushFront(crate)
+func apply_9001(stacks [9]*list.List, instructions []Instruction) {
+	for _, instru := range instructions {
+		crates := []any{}
+		for i := 0; i < instru.quantity; i++ {
+			crate := stacks[instru.from].Remove(stacks[instru.from].Front())
+			crates = append([]any{crate}, crates...) //prepend
+		}
+		for _, crate := range crates {
+			stacks[instru.to].PushFront(crate)
+		}
 	}
 }
