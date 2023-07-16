@@ -24,13 +24,6 @@ func main() {
 	fmt.Println(result)
 }
 
-type file struct {
-	name      string
-	base_size int
-	childs    []*file
-	parent    *file
-}
-
 func part1(input io.Reader) string {
 	root := parseInput(input)
 	small_dirs := root.findDirLesserThan(100000)
@@ -53,6 +46,13 @@ func part2(input io.Reader) string {
 		}
 	}
 	return fmt.Sprint(min)
+}
+
+type file struct {
+	name      string
+	base_size int
+	childs    []*file
+	parent    *file
 }
 
 func (f *file) size() int {
@@ -107,7 +107,6 @@ func parseInput(input io.Reader) *file {
 	head := root
 	scanner := bufio.NewScanner(os.Stdin)
 
-	// First parse the stack diagram
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line[0] == '$' {
