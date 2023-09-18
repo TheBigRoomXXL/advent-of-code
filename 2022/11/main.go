@@ -27,37 +27,88 @@ func main() {
 }
 
 func part1(input io.Reader) int {
-	mokeys := parseInput(input)
-	fmt.Println(mokeys)
-	return 2069
+	monkeys := parseInput(input)
+	for i := 0; i < 20; i++ {
+		for _, monkey := range monkeys {
+			monkey.OperateOverItems(monkeys, 3)
+		}
+	}
+	max1 := 0
+	max2 := 0
+	for _, monkey := range monkeys {
+		if monkey.inspectCount >= max1 {
+			max2 = max1
+			max1 = monkey.inspectCount
+		}
+	}
+	return max1 * max2
 }
 
 func part2(input io.Reader) int {
-	return 2069
+	monkeys := parseInput(input)
+
+	// zen calculation from https://github.com/alexchao26/advent-of-code-go/blob/main/2022/day11/main.go#L107
+	zen := 1
+	for _, m := range monkeys {
+		zen *= m.divisiblebY
+	}
+	for i := 0; i < 10_000; i++ {
+		fmt.Println("round", i+1)
+		for j, monkey := range monkeys {
+			monkey.OperateOverItems(monkeys, zen)
+			fmt.Println("mokey", j, "has inpected", monkey.inspectCount, "time")
+
+		}
+	}
+	max1 := 0
+	max2 := 0
+	for _, monkey := range monkeys {
+		if monkey.inspectCount >= max1 {
+			max2 = max1
+			max1 = monkey.inspectCount
+		} else if monkey.inspectCount > max2 {
+			max2 = monkey.inspectCount
+		}
+	}
+	return max1 * max2
 }
 
 type Monkey struct {
-	items     []int
-	operation func(int) int
-	test      func(int) int
+	items        []int
+	operation    func(int) int
+	test         func(int) int
+	divisiblebY  int
+	inspectCount int
 }
 
-func parseInput(input io.Reader) []Monkey {
+func (m *Monkey) OperateOverItems(monkeys []*Monkey, zen int) {
+	for _, old := range m.items {
+		new := m.operation(old) % zen
+		m.inspectCount++
+		// fmt.Println("    item ", old, "has become", new)
+		next := m.test(new)
+		monkeys[next].items = append(monkeys[next].items, new)
+	}
+	m.items = []int{}
+}
+
+func parseInput(input io.Reader) []*Monkey {
 	scanner := bufio.NewScanner(input)
 	scanner.Split(ScanMonkeys)
-	monkeys := []Monkey{}
+	monkeys := []*Monkey{}
 	for scanner.Scan() {
 		monkeys = append(monkeys, parseMonkey(scanner.Text()))
 	}
 	return monkeys
 }
 
-func parseMonkey(monkeystr string) Monkey {
-	lines := strings.Split(monkeystr, "/n")
-	items := parseItems(lines[0])
-	operation := parseOperation(lines[1])
-	test := parseTest(lines[2:5])
-	return Monkey{items, operation, test}
+func parseMonkey(monkeystr string) *Monkey {
+	lines := strings.Split(monkeystr, "\n")
+	items := parseItems(lines[1])
+	operation := parseOperation(lines[2])
+	test, div := parseTest(lines[3:6])
+
+	return &Monkey{items, operation, test, div, 0}
 }
 
 func parseItems(line string) []int {
@@ -95,12 +146,11 @@ func parseOperation(line string) func(int) int {
 	panic("Could not return operation")
 }
 
-func parseTest(lines []string) func(int) int {
+func parseTest(lines []string) (func(int) int, int) {
 	if len(lines) != 3 {
 		panic("There should be 3 lines to parse dummy")
 	}
 	div := AtoiOrPanic(lines[0][21:])
-	fmt.Println(lines[1][29:])
 	m1 := AtoiOrPanic(lines[1][29:])
 	m2 := AtoiOrPanic(lines[2][30:])
 	return func(x int) int {
@@ -108,7 +158,7 @@ func parseTest(lines []string) func(int) int {
 			return m1
 		}
 		return m2
-	}
+	}, div
 
 }
 

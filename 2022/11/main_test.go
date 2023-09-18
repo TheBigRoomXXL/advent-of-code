@@ -49,7 +49,7 @@ func TestParseTest(t *testing.T) {
 		return 3
 	}
 
-	ans := parseTest(in)
+	ans, _ := parseTest(in)
 	if ans(13) != want(13) {
 		t.Errorf("\nWanted %v\nGot:%v\n", want(13), ans(13))
 	}
