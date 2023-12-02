@@ -10,7 +10,7 @@ import (
 
 func main() {
 	var result int
-	part := flag.Int("part", 0, "part number (1 or 2)")
+	part := flag.Int("p", 0, "part number (1 or 2)")
 	flag.Parse()
 	switch *part {
 	case 1:
