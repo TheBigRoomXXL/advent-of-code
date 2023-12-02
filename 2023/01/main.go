@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -38,7 +39,7 @@ func part1(input io.Reader) string {
 		calibration_str := string(digits[0]) + string(digits[len(digits)-1])
 		calibration, err := strconv.Atoi(calibration_str)
 		if err != nil {
-			panic("bad conversion")
+			panic(err)
 		}
 		result += calibration
 	}
@@ -47,7 +48,32 @@ func part1(input io.Reader) string {
 }
 
 func part2(input io.Reader) string {
-	return ""
+	scanner := bufio.NewScanner(input)
+	result := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		digits := []string{}
+		for i, r := range line {
+			if isDigit(r) {
+				digits = append(digits, string(r))
+			}
+			fivenextchar := line[i:len(line)]
+			isWord, val := isWordDigit(fivenextchar)
+			if isWord {
+				digits = append(digits, string(val))
+			}
+		}
+
+		fmt.Println(line, " => ", digits)
+		calibration_str := digits[0] + digits[len(digits)-1]
+		calibration, err := strconv.Atoi(calibration_str)
+		if err != nil {
+			panic(err)
+		}
+		result += calibration
+	}
+
+	return fmt.Sprint(result)
 }
 
 func isDigit(r rune) bool {
@@ -58,4 +84,33 @@ func isDigit(r rune) bool {
 		}
 	}
 	return false
+}
+
+func isWordDigit(input string) (bool, string) {
+	words := map[string]string{
+		"one":   "1",
+		"two":   "2",
+		"three": "3",
+		"four":  "4",
+		"five":  "5",
+		"six":   "6",
+		"seven": "7",
+		"eight": "8",
+		"nine":  "9",
+	}
+	for k, v := range words {
+		test := input[0:min(len(k), len(input))]
+		if strings.Contains(test, k) {
+			return true, v
+		}
+	}
+
+	return false, ""
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
